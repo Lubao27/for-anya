@@ -1,0 +1,505 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>For Anya ❤️</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: "Poppins", Arial, sans-serif;
+    background: linear-gradient(135deg, #ffd6e7, #ffeef5, #ffd9ec);
+    overflow: hidden;
+}
+
+/* Floating hearts */
+.heart {
+    position: fixed;
+    bottom: -30px;
+    font-size: 20px;
+    animation: floatUp linear infinite;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+@keyframes floatUp {
+    from {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0;
+    }
+    20% {
+        opacity: 0.8;
+    }
+    to {
+        transform: translateY(-110vh) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* Main card */
+.container {
+    width: min(90%, 430px);
+    text-align: center;
+    z-index: 2;
+}
+
+.intro {
+    margin-bottom: 20px;
+}
+
+.intro h1 {
+    color: #d63384;
+    font-size: 30px;
+    margin-bottom: 8px;
+}
+
+.intro p {
+    color: #7d5266;
+    font-size: 14px;
+}
+
+/* Scratch card */
+.scratch-wrapper {
+    position: relative;
+    width: 100%;
+    height: 250px;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 15px 40px rgba(190, 70, 120, 0.2);
+    background: white;
+}
+
+/* Hidden message */
+.message {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 30px;
+}
+
+.message .big-heart {
+    font-size: 42px;
+    margin-bottom: 10px;
+}
+
+.message h2 {
+    color: #d63384;
+    font-size: 23px;
+    margin-bottom: 12px;
+}
+
+.message p {
+    color: #674858;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+/* Canvas */
+#scratchCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    touch-action: none;
+}
+
+/* Bottom */
+.hint {
+    margin-top: 18px;
+    color: #9a6078;
+    font-size: 14px;
+}
+
+.footer {
+    margin-top: 15px;
+    color: #b06a87;
+    font-size: 12px;
+}
+
+/* Reveal state */
+.revealed #scratchCanvas {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1s ease;
+}
+
+/* Button */
+#resetBtn {
+    display: none;
+    margin: 15px auto 0;
+    border: none;
+    background: #d63384;
+    color: white;
+    padding: 10px 22px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+#resetBtn:hover {
+    background: #b92d70;
+}
+
+/* Confetti */
+.confetti {
+    position: fixed;
+    width: 9px;
+    height: 14px;
+    top: -20px;
+    animation: confettiFall 3s linear forwards;
+    z-index: 10;
+}
+
+@keyframes confettiFall {
+    to {
+        transform: translateY(110vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .intro h1 {
+        font-size: 26px;
+    }
+
+    .scratch-wrapper {
+        height: 290px;
+    }
+
+    .message {
+        padding: 25px;
+    }
+
+    .message p {
+        font-size: 13px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="intro">
+        <h1>For My Anya ❤️</h1>
+        <p>May maliit akong surprise para sa'yo...</p>
+    </div>
+
+    <div class="scratch-wrapper" id="card">
+
+        <div class="message">
+
+            <div class="big-heart">💗</div>
+
+            <h2>I Love You, Mahal ❤️</h2>
+
+            <p>
+                I love you mahal kong Anya. 🥺❤️
+                <br><br>
+
+                I know nasa mood swings ka ngayon,
+                pero mahal, wag ka mag-aalala sakin.
+                Naiintindihan po kita, okay? 🫶
+                <br><br>
+
+                Aalagaan kita palagi, asawa ko.
+                I love youuu! ❤️
+                <br>
+
+                Miss na kitaaa. 🥺💗
+            </p>
+
+        </div>
+
+        <canvas id="scratchCanvas"></canvas>
+
+    </div>
+
+    <div class="hint" id="hint">
+        ☝️ Scratch mo yung card para makita yung message
+    </div>
+
+    <button id="resetBtn" onclick="resetCard()">
+        Scratch Again 💗
+    </button>
+
+    <div class="footer">
+        Made with love, just for Anya ❤️
+    </div>
+
+</div>
+
+<script>
+
+const canvas = document.getElementById("scratchCanvas");
+const ctx = canvas.getContext("2d");
+const card = document.getElementById("card");
+const hint = document.getElementById("hint");
+const resetBtn = document.getElementById("resetBtn");
+
+let isDrawing = false;
+let scratchedPixels = 0;
+let revealed = false;
+
+/* Resize canvas */
+function resizeCanvas() {
+
+    const rect = canvas.getBoundingClientRect();
+
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
+    createScratchLayer();
+}
+
+/* Create silver scratch layer */
+function createScratchLayer() {
+
+    ctx.globalCompositeOperation = "source-over";
+
+    const gradient = ctx.createLinearGradient(
+        0, 0,
+        canvas.width,
+        canvas.height
+    );
+
+    gradient.addColorStop(0, "#cfcfcf");
+    gradient.addColorStop(0.5, "#eeeeee");
+    gradient.addColorStop(1, "#bdbdbd");
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    /* Text */
+    ctx.fillStyle = "#777";
+    ctx.textAlign = "center";
+
+    ctx.font = "bold 22px Arial";
+    ctx.fillText(
+        "SCRATCH ME ❤️",
+        canvas.width / 2,
+        canvas.height / 2 - 5
+    );
+
+    ctx.font = "14px Arial";
+    ctx.fillText(
+        "May message ako para sa'yo",
+        canvas.width / 2,
+        canvas.height / 2 + 25
+    );
+}
+
+/* Get mouse/touch position */
+function getPosition(e) {
+
+    const rect = canvas.getBoundingClientRect();
+
+    let x, y;
+
+    if (e.touches) {
+        x = e.touches[0].clientX - rect.left;
+        y = e.touches[0].clientY - rect.top;
+    } else {
+        x = e.clientX - rect.left;
+        y = e.clientY - rect.top;
+    }
+
+    return { x, y };
+}
+
+/* Scratch */
+function scratch(e) {
+
+    if (!isDrawing || revealed) return;
+
+    e.preventDefault();
+
+    const pos = getPosition(e);
+
+    ctx.globalCompositeOperation = "destination-out";
+
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 25, 0, Math.PI * 2);
+    ctx.fill();
+
+    checkScratchProgress();
+}
+
+/* Check how much has been scratched */
+function checkScratchProgress() {
+
+    if (revealed) return;
+
+    const data = ctx.getImageData(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    ).data;
+
+    let transparent = 0;
+
+    /* Check every 20th pixel for performance */
+    for (let i = 3; i < data.length; i += 80) {
+
+        if (data[i] === 0) {
+            transparent++;
+        }
+    }
+
+    const total = data.length / 80;
+    const percentage = (transparent / total) * 100;
+
+    if (percentage > 45) {
+        revealCard();
+    }
+}
+
+/* Reveal */
+function revealCard() {
+
+    if (revealed) return;
+
+    revealed = true;
+
+    card.classList.add("revealed");
+
+    hint.innerHTML = "Message unlocked! ❤️";
+
+    resetBtn.style.display = "block";
+
+    createConfetti();
+
+}
+
+/* Confetti */
+function createConfetti() {
+
+    const symbols = ["❤️", "💗", "💕", "✨", "🌸", "💖"];
+
+    for (let i = 0; i < 70; i++) {
+
+        const piece = document.createElement("div");
+
+        piece.className = "confetti";
+
+        piece.innerHTML =
+            symbols[Math.floor(Math.random() * symbols.length)];
+
+        piece.style.left =
+            Math.random() * 100 + "vw";
+
+        piece.style.animationDuration =
+            (2 + Math.random() * 2) + "s";
+
+        piece.style.fontSize =
+            (12 + Math.random() * 15) + "px";
+
+        document.body.appendChild(piece);
+
+        setTimeout(() => {
+            piece.remove();
+        }, 4000);
+    }
+}
+
+/* Reset */
+function resetCard() {
+
+    revealed = false;
+
+    card.classList.remove("revealed");
+
+    resetBtn.style.display = "none";
+
+    hint.innerHTML =
+        "☝️ Scratch mo yung card para makita yung message";
+
+    createScratchLayer();
+}
+
+/* Mouse events */
+canvas.addEventListener("mousedown", () => {
+    isDrawing = true;
+});
+
+canvas.addEventListener("mouseup", () => {
+    isDrawing = false;
+});
+
+canvas.addEventListener("mouseleave", () => {
+    isDrawing = false;
+});
+
+canvas.addEventListener("mousemove", scratch);
+
+/* Touch events */
+canvas.addEventListener("touchstart", (e) => {
+    isDrawing = true;
+    scratch(e);
+});
+
+canvas.addEventListener("touchmove", scratch);
+
+canvas.addEventListener("touchend", () => {
+    isDrawing = false;
+});
+
+/* Floating hearts */
+function createFloatingHeart() {
+
+    const heart = document.createElement("div");
+
+    heart.className = "heart";
+
+    const hearts = ["❤️", "💗", "💕", "💖", "💓"];
+
+    heart.innerHTML =
+        hearts[Math.floor(Math.random() * hearts.length)];
+
+    heart.style.left =
+        Math.random() * 100 + "vw";
+
+    heart.style.animationDuration =
+        (5 + Math.random() * 5) + "s";
+
+    heart.style.fontSize =
+        (15 + Math.random() * 20) + "px";
+
+    document.body.appendChild(heart);
+
+    setTimeout(() => {
+        heart.remove();
+    }, 10000);
+}
+
+setInterval(createFloatingHeart, 700);
+
+/* Start */
+window.addEventListener("resize", resizeCanvas);
+
+resizeCanvas();
+
+</script>
+
+</body>
+</html>
+```
